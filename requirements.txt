@@ -1,0 +1,2 @@
+geoip2>=4.1.0
+mcstatus>=5.1.1
