@@ -8,6 +8,7 @@ from multiprocessing import Process, Queue
 import geoip2.database
 from mcstatus import MinecraftServer
 
+BAD_CHARACTERS = ("'", '"', "`", "\n")
 CONNECT_TIMEOUT = 2
 CSV_HEADER = "Country,IP,Port,Version,Online,Max,Ping,Comment\n"
 CSV_SEPARATORS = ("\t", ",", ";")
@@ -39,15 +40,27 @@ def writer(data_queue, file_name, geoip):
             logging.debug("Writer process exit")
             break
         country = geoip.country(data["ip"]).country.name
-        version = data["version"].replace("\n", "")
+        version = data["version"]
+        for char in BAD_CHARACTERS:
+            version = version.replace(char, "")
         for char in version:
             if char in CSV_SEPARATORS:
                 version = '"{}"'.format(version)
-        logging.info("Server %s:%d from %s is using Minecraft version %s and has %d/%d players. Ping: %d" %
-                     (data["ip"], data["port"], country, version, data["p_online"], data["p_max"], data["latency"]))
+                break
+        row_data = tuple(
+            str(x) for x in (
+                data["ip"],
+                data["port"],
+                country,
+                version,
+                data["p_online"],
+                data["p_max"],
+                data["latency"]
+            )
+        )
+        logging.info("Server %s:%s from %s is using Minecraft version %s and has %s/%s players. Ping: %s" % row_data)
         with open(file_name, "a") as f:
-            f.write('%s,%s,%s,%s,%d,%d,%d,\n' % (country, data["ip"], data["port"], version,
-                                                 data["p_online"], data["p_max"], data["latency"]))
+            f.write(",".join(row_data) + "\n")
 
 
 def counter(task_queue, total):
