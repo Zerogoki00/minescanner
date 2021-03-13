@@ -3,9 +3,12 @@ import argparse
 import logging
 import sys
 import time
-from multiprocessing import Process, Queue
+
+from threading import Thread
+from queue import Queue
 
 import geoip2.database
+
 from mcstatus import MinecraftServer
 
 BAD_CHARACTERS = ("'", '"', "`", "\n")
@@ -49,9 +52,9 @@ def writer(data_queue, file_name, geoip):
                 break
         row_data = tuple(
             str(x) for x in (
+                country,
                 data["ip"],
                 data["port"],
-                country,
                 version,
                 data["p_online"],
                 data["p_max"],
@@ -117,26 +120,26 @@ def main():
 
     task_queue = Queue()
     result_queue = Queue()
-    worker_processes = [
-        Process(target=worker, args=(i, task_queue, result_queue,))
+    worker_threads = [
+        Thread(target=worker, args=(i, task_queue, result_queue,))
         for i in range(num_proc)
     ]
-    writer_process = Process(target=writer, args=(result_queue, out_file, geoip2_reader,))
+    writer_thread = Thread(target=writer, args=(result_queue, out_file, geoip2_reader,))
     for h in hosts:
         task_queue.put((h[0], h[1]))
-    writer_process.start()
+    writer_thread.start()
 
-    counter_process = Process(target=counter, args=(task_queue, len(hosts)))
-    counter_process.start()
+    counter_thread = Thread(target=counter, args=(task_queue, len(hosts)))
+    counter_thread.start()
 
-    for process in worker_processes:
+    for process in worker_threads:
         process.start()
-    for i, process in enumerate(worker_processes):
+    for i, process in enumerate(worker_threads):
         process.join()
         logging.debug("Process %d joined" % i)
     result_queue.put(-1)
-    counter_process.join()
-    writer_process.join()
+    counter_thread.join()
+    writer_thread.join()
 
 
 if __name__ == "__main__":
