@@ -13,7 +13,7 @@ from mcstatus import MinecraftServer
 
 BAD_CHARACTERS = ("'", '"', "`", "\n")
 CONNECT_TIMEOUT = 2
-CSV_HEADER = "Country,IP,Port,Version,Online,Max,Ping,MOTD\n"
+CSV_HEADER = "IP,Port,Country,Version,Online,Max,Ping,MOTD\n"
 CSV_SEPARATORS = ("\t", ",", ";")
 DATABASE_FILE = "geoip/GeoLite2-Country.mmdb"
 DEFAULT_WORKER_COUNT = 4
