@@ -13,7 +13,7 @@ from mcstatus import MinecraftServer
 
 BAD_CHARACTERS = ("'", '"', "`", "\n")
 CONNECT_TIMEOUT = 2
-CSV_HEADER = "Country,IP,Port,Version,Online,Max,Ping,Comment\n"
+CSV_HEADER = "Country,IP,Port,Version,Online,Max,Ping,MOTD\n"
 CSV_SEPARATORS = ("\t", ",", ";")
 DATABASE_FILE = "geoip/GeoLite2-Country.mmdb"
 DEFAULT_WORKER_COUNT = 4
@@ -30,7 +30,7 @@ def worker(num, q_in, q_out):
             latency = int(server.ping())
             status = server.status()
             s_result = dict(ip=ip, port=port, latency=latency, version=status.version.name,
-                            p_online=status.players.online, p_max=status.players.max)
+                            p_online=status.players.online, p_max=status.players.max, motd=status.description)
             q_out.put(s_result)
         except Exception as e:
             logging.debug("[Process %d] %s mcstatus exception: %s" % (num, ip, e))
@@ -52,16 +52,18 @@ def writer(data_queue, file_name, geoip):
                 break
         row_data = tuple(
             str(x) for x in (
-                country,
                 data["ip"],
                 data["port"],
+                country,
                 version,
                 data["p_online"],
                 data["p_max"],
-                data["latency"]
+                data["latency"],
+                data["motd"]
             )
         )
-        logging.info("Server %s:%s from %s is using Minecraft version %s and has %s/%s players. Ping: %s" % row_data)
+        logging.info(
+            "Server %s:%s from %s is using Minecraft version %s and has %s/%s players. Ping: %s MOTD: %s" % row_data)
         with open(file_name, "a") as f:
             f.write(",".join(row_data) + "\n")
 
