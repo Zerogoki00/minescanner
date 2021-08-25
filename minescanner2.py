@@ -11,14 +11,16 @@ import geoip2.database
 
 from mcstatus import MinecraftServer
 
-BAD_CHARACTERS = ("'", '"', "`", "\n")
+
+BAD_CHARACTERS = ("'", '"', "`", "\n", "\t", ",", ";")
 CONNECT_TIMEOUT = 2
 CSV_HEADER = "IP,Port,Country,Version,Online,Max,Ping,MOTD\n"
-CSV_SEPARATORS = ("\t", ",", ";")
 DATABASE_FILE = "geoip/GeoLite2-Country.mmdb"
 DEFAULT_WORKER_COUNT = 4
 LOG_DATE_FMT = "%Y/%m/%d %H:%M:%S"
 LOG_FORMAT = "[%(asctime)s] %(message)s"
+
+string_translator = str.maketrans({char: "" for char in BAD_CHARACTERS})
 
 
 def worker(num, q_in, q_out):
@@ -29,27 +31,26 @@ def worker(num, q_in, q_out):
             server = MinecraftServer(ip, port)
             latency = int(server.ping())
             status = server.status()
-            s_result = dict(ip=ip, port=port, latency=latency, version=status.version.name,
-                            p_online=status.players.online, p_max=status.players.max, motd=status.description)
-            q_out.put(s_result)
+            result = dict(
+                ip=ip,
+                port=port,
+                latency=latency,
+                version=status.version.name,
+                p_online=status.players.online,
+                p_max=status.players.max,
+                motd=status.description,
+            )
+            q_out.put(result)
         except Exception as e:
             logging.debug("[Process %d] %s mcstatus exception: %s" % (num, ip, e))
 
 
 def writer(data_queue, file_name, geoip):
-    while True:
-        data = data_queue.get()
-        if data == -1:
-            logging.debug("Writer process exit")
-            break
+    data = data_queue.get()
+    while data != -1:
         country = geoip.country(data["ip"]).country.name
-        version = data["version"]
-        for char in BAD_CHARACTERS:
-            version = version.replace(char, "")
-        for char in version:
-            if char in CSV_SEPARATORS:
-                version = '"{}"'.format(version)
-                break
+        version = data["version"].translate(string_translator)
+        motd = data["motd"].translate(string_translator)
         row_data = tuple(
             str(x) for x in (
                 data["ip"],
@@ -59,13 +60,16 @@ def writer(data_queue, file_name, geoip):
                 data["p_online"],
                 data["p_max"],
                 data["latency"],
-                data["motd"]
+                motd,
             )
         )
         logging.info(
             "Server %s:%s from %s is using Minecraft version %s and has %s/%s players. Ping: %s MOTD: %s" % row_data)
         with open(file_name, "a") as f:
             f.write(",".join(row_data) + "\n")
+        data = data_queue.get()
+    else:
+        logging.debug("Writer thread exit")
 
 
 def counter(task_queue, total):
@@ -122,6 +126,7 @@ def main():
 
     task_queue = Queue()
     result_queue = Queue()
+
     worker_threads = [
         Thread(target=worker, args=(i, task_queue, result_queue,))
         for i in range(num_proc)
