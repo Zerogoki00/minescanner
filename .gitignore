@@ -137,3 +137,10 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+in/*
+!in/example.txt
+scanned/*
+!scanned/example.txt
+out/*
+!out/example.csv
