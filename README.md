@@ -44,6 +44,6 @@ After scanning you can start minescanner using this command:
 python3 minescanner2.py scanned/<filename> out/<filename> -n <num of processes>
 ```
 
-The default number of processes is 4, but I recommend setting 20-40 because it will save a lot of time.
+The default number of threads is 4, but I recommend setting 20-40 because it will save a lot of time.
 
 Minescanner will start scanning and will write results in CSV format.
