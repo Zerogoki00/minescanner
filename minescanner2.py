@@ -65,7 +65,7 @@ def writer(data_queue, file_name, geoip):
         )
         logging.info(
             "Server %s:%s from %s is using Minecraft version %s and has %s/%s players. Ping: %s MOTD: %s" % row_data)
-        with open(file_name, "a") as f:
+        with open(file_name, "a", encoding="utf-8") as f:
             f.write(",".join(row_data) + "\n")
         data = data_queue.get()
     else:
@@ -132,8 +132,8 @@ def main():
         for i in range(num_proc)
     ]
     writer_thread = Thread(target=writer, args=(result_queue, out_file, geoip2_reader,))
-    for h in hosts:
-        task_queue.put((h[0], h[1]))
+    for ip, port in hosts:
+        task_queue.put((ip, port))
     writer_thread.start()
 
     counter_thread = Thread(target=counter, args=(task_queue, len(hosts)))
