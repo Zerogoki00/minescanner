@@ -89,9 +89,9 @@ def parse_args():
     parser.add_argument("input", help="Input file (masscan -oL result)")
     parser.add_argument("output", help="Output file")
     parser.add_argument("-d", "--debug", help="Enable debug output", action="store_true")
-    parser.add_argument("-n", '--num-processes', help="Spawn N processes", type=int, required=False)
+    parser.add_argument("-n", '--num-threads', help="Spawn N threads", type=int, required=False)
     args = parser.parse_args()
-    return args.input, args.output, args.debug, args.num_processes
+    return args.input, args.output, args.debug, args.num_threads
 
 
 def read_hosts(file_name):
@@ -139,11 +139,11 @@ def main():
     counter_thread = Thread(target=counter, args=(task_queue, len(hosts)))
     counter_thread.start()
 
-    for process in worker_threads:
-        process.start()
-    for i, process in enumerate(worker_threads):
-        process.join()
-        logging.debug("Process %d joined" % i)
+    for thread in worker_threads:
+        thread.start()
+    for i, thread in enumerate(worker_threads):
+        thread.join()
+        logging.debug("Thread %d joined" % i)
     result_queue.put(-1)
     counter_thread.join()
     writer_thread.join()
