@@ -8,6 +8,8 @@ It parses [masscan](https://github.com/robertdavidgraham/masscan) report file an
 
 Install [masscan](https://github.com/robertdavidgraham/masscan)
 
+Download the latest IP to country database from [here](https://git.io/GeoLite2-Country.mmdb) and place it into `geoip` folder
+
 Create venv:
 
 ```
