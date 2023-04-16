@@ -9,7 +9,7 @@ from queue import Queue
 
 import geoip2.database
 
-from mcstatus import MinecraftServer
+from mcstatus import JavaServer
 
 
 BAD_CHARACTERS = ("'", '"', "`", "\n", "\t", ",", ";")
@@ -28,7 +28,7 @@ def worker(num, q_in, q_out):
         ip, port = q_in.get()
         logging.debug("[Process %d] received %s to process" % (num, ip))
         try:
-            server = MinecraftServer(ip, port)
+            server = JavaServer(ip, port)
             latency = int(server.ping())
             status = server.status()
             result = dict(
