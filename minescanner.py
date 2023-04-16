@@ -3,14 +3,11 @@ import argparse
 import logging
 import sys
 import time
-
-from threading import Thread
 from queue import Queue
+from threading import Thread
 
 import geoip2.database
-
 from mcstatus import JavaServer
-
 
 BAD_CHARACTERS = ("'", '"', "`", "\n", "\t", ",", ";")
 CONNECT_TIMEOUT = 2
@@ -52,7 +49,8 @@ def writer(data_queue, file_name, geoip):
         version = data["version"].translate(string_translator)
         motd = data["motd"].translate(string_translator)
         row_data = tuple(
-            str(x) for x in (
+            str(x)
+            for x in (
                 data["ip"],
                 data["port"],
                 country,
@@ -64,7 +62,9 @@ def writer(data_queue, file_name, geoip):
             )
         )
         logging.info(
-            "Server %s:%s from %s is using Minecraft version %s and has %s/%s players. Ping: %s MOTD: %s" % row_data)
+            "Server %s:%s from %s is using Minecraft version %s and has %s/%s players. Ping: %s MOTD: %s"
+            % row_data
+        )
         with open(file_name, "a", encoding="utf-8") as f:
             f.write(",".join(row_data) + "\n")
         data = data_queue.get()
@@ -81,15 +81,24 @@ def counter(task_queue, total):
         else:
             last_count = tasks_count
             done = total - tasks_count
-            logging.info("Processed %d/%d hosts (%d%%)" % (done, total, round(done / total * 100, 1)))
+            logging.info(
+                "Processed %d/%d hosts (%d%%)"
+                % (done, total, round(done / total * 100, 1))
+            )
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Scan for minecraft servers in IP list")
+    parser = argparse.ArgumentParser(
+        description="Scan for minecraft servers in IP list"
+    )
     parser.add_argument("input", help="Input file (masscan -oL result)")
     parser.add_argument("output", help="Output file")
-    parser.add_argument("-d", "--debug", help="Enable debug output", action="store_true")
-    parser.add_argument("-n", '--num-threads', help="Spawn N threads", type=int, required=False)
+    parser.add_argument(
+        "-d", "--debug", help="Enable debug output", action="store_true"
+    )
+    parser.add_argument(
+        "-n", "--num-threads", help="Spawn N threads", type=int, required=False
+    )
     args = parser.parse_args()
     return args.input, args.output, args.debug, args.num_threads
 
@@ -97,11 +106,16 @@ def parse_args():
 def read_hosts(file_name):
     hosts = []
     try:
-        with open(file_name, 'r') as f:
+        with open(file_name, "r") as f:
             for line in f:
                 if "open" in line:
                     data = line.split()
-                    hosts.append((data[3], int(data[2]),))
+                    hosts.append(
+                        (
+                            data[3],
+                            int(data[2]),
+                        )
+                    )
     except FileNotFoundError:
         logging.critical("File not found")
         sys.exit(1)
@@ -128,10 +142,24 @@ def main():
     result_queue = Queue()
 
     worker_threads = [
-        Thread(target=worker, args=(i, task_queue, result_queue,))
+        Thread(
+            target=worker,
+            args=(
+                i,
+                task_queue,
+                result_queue,
+            ),
+        )
         for i in range(num_proc)
     ]
-    writer_thread = Thread(target=writer, args=(result_queue, out_file, geoip2_reader,))
+    writer_thread = Thread(
+        target=writer,
+        args=(
+            result_queue,
+            out_file,
+            geoip2_reader,
+        ),
+    )
     for ip, port in hosts:
         task_queue.put((ip, port))
     writer_thread.start()
