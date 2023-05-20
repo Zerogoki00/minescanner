@@ -6,7 +6,7 @@ It parses [masscan](https://github.com/robertdavidgraham/masscan) report file an
 
 ## Installation
 
-Install [masscan](https://github.com/robertdavidgraham/masscan)
+Install [masscan](https://github.com/robertdavidgraham/masscan). You can get masscan for windows from [here](https://github.com/Arryboom/MasscanForWindows).
 
 Download the latest IP to country database from [here](https://git.io/GeoLite2-Country.mmdb) and place it into `geoip` folder
 
